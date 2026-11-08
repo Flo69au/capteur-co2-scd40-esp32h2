@@ -60,9 +60,9 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01030000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01040000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01030000-ota-file.zigbee
+ *        -> produit 1337-0003-01040000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
@@ -102,7 +102,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01020000  // v1.2 (offset température 8.6°C)
+#define OTA_FW_VERSION       0x01030000  // v1.3 (correction humidité -10.3 %)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
@@ -118,7 +118,8 @@
 // Correction d'humidité (en points de %RH), appliquée par le firmware avant
 // l'envoi Zigbee. À régler seulement si un écart stable persiste une fois la
 // température juste : HUM_OFFSET_PCT = RH_reference - RH_affichée + ancien offset
-#define HUM_OFFSET_PCT 0.0
+// 2026-11-08 (v1.2, offset T 8.6) : affiché 61.3% vs référence 51% -> 51 - 61.3 + 0.0 = -10.3
+#define HUM_OFFSET_PCT -10.3
 
 // Envoi forcé des 3 mesures vers Zigbee2MQTT, quoi qu'il arrive (même si la
 // valeur n'a pas changé). Le reporting automatique de la pile Zigbee ne
