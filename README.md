@@ -51,7 +51,7 @@ que le SCD40 répond en `0x62`.
 - Outils → Erase All Flash Before Sketch Upload : `Enabled` au premier flash, `Disabled` ensuite
 
 Calibrage : `TEMP_OFFSET_C 8.6` depuis la v1.2 (capteur 25,8 °C contre 21,2 °C de référence avec
-l'offset usine 4.0). Pour réajuster : laisser la carte 30 min dans son boîtier puis
+l'offset usine 4.0), `HUM_OFFSET_PCT -10.3` depuis la v1.3 (61,3 % contre 51 % de référence). Pour réajuster : laisser la carte 30 min dans son boîtier puis
 `nouvel_offset = T_capteur − T_référence + offset_installé`.
 
 ## Zigbee2MQTT
