@@ -21,7 +21,8 @@
  * effacement complet, jamais par OTA.
  *
  * Câblage SCD40 -> ESP32-H2-Zero :
- *   VDD -> 3V3
+ *   VDD -> 5V   (seulement si SDA/SCL restent à ~3,3 V une fois le module
+ *                alimenté : mesurer avant de brancher, voir README ; sinon 3V3)
  *   GND -> GND
  *   SDA -> GPIO12
  *   SCL -> GPIO22
