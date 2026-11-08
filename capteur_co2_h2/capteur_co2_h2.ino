@@ -39,11 +39,13 @@
  *
  * LED de statut : la LED RGB WS2812 intégrée (RGB_BUILTIN, GPIO8) clignote
  *   en orange tant que le device n'est pas connecté au réseau Zigbee (donc
- *   pendant l'appairage) et s'éteint une fois connecté. Blanc fixe = reset
- *   en cours, bleu rapide = mise à jour OTA. Couleurs dans ledColor() plus bas.
+ *   pendant l'appairage) et s'éteint une fois connecté. Flash vert = données
+ *   envoyées à Zigbee2MQTT (toutes les 30 s), flash rouge = échec d'envoi,
+ *   blanc fixe = reset en cours, bleu rapide = mise à jour OTA.
+ *   Couleurs dans ledColor() plus bas.
  *
  * Côté Zigbee2MQTT : ce firmware n'étant pas un device "connu", il faut lui
- * associer le convertisseur externe du repo (z2m_converter.js).
+ * associer le convertisseur externe du repo (z2m_converter_h2.js).
  *
  * Mise à jour OTA (par le réseau Zigbee, pas de WiFi nécessaire) :
  *   Le device embarque un client OTA Zigbee natif.
@@ -58,9 +60,9 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01010000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01020000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01010000-ota-file.zigbee
+ *        -> produit 1337-0003-01020000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
@@ -100,7 +102,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01000000  // v1.0
+#define OTA_FW_VERSION       0x01010000  // v1.1 (flash LED à chaque envoi)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
@@ -147,6 +149,14 @@ inline void ledOff() {
 }
 inline void ledTogglePairing() {  // orange clignotant : appairage en cours
   if (ledState) ledOff(); else ledColor(40, 15, 0);
+}
+
+// Flash bref à chaque envoi de données (non bloquant : éteint dans loop())
+#define LED_FLASH_MS 150
+static unsigned long ledFlashUntil = 0;
+inline void ledFlash(bool ok) {  // vert = envoyé, rouge = échec
+  if (ok) ledColor(0, 40, 0); else ledColor(40, 0, 0);
+  ledFlashUntil = millis() + LED_FLASH_MS;
 }
 
 void onOTAStateChange(bool active) {
@@ -326,6 +336,12 @@ void loop() {
     }
   }
 
+  // Fin du flash LED d'envoi
+  if (ledFlashUntil && (long)(millis() - ledFlashUntil) >= 0) {
+    ledFlashUntil = 0;
+    ledOff();
+  }
+
   // Le SCD40 produit une nouvelle mesure toutes les ~5s en mode périodique
   if (millis() - lastRead > 1000) {
     lastRead = millis();
@@ -356,5 +372,6 @@ void loop() {
     bool ok = zbTempHum.report();   // température + humidité
     ok = zbCO2.report() && ok;      // CO2
     Serial.println(ok ? "Rapport Zigbee envoyé" : "Échec d'envoi du rapport Zigbee");
+    ledFlash(ok);  // flash vert (ou rouge si échec)
   }
 }
