@@ -1,12 +1,12 @@
 [
   {
-    "fileName": "1337-0003-01000000-ota-file.zigbee",
-    "fileVersion": 16777216,
-    "fileSize": 763662,
-    "url": "https://github.com/Flo69au/capteur-co2-scd40-esp32h2/releases/download/v1.0/1337-0003-01000000-ota-file.zigbee",
+    "fileName": "1337-0003-01020000-ota-file.zigbee",
+    "fileVersion": 16908288,
+    "fileSize": 763694,
+    "url": "https://github.com/Flo69au/capteur-co2-scd40-esp32h2/releases/download/v1.2/1337-0003-01020000-ota-file.zigbee",
     "imageType": 3,
     "manufacturerCode": 4919,
     "modelId": "H2-SCD40-CO2",
-    "sha512": "9ea06f12ed049fb6e28cfcae5833c4461f585c7781119408b1427ad80df2e65194b06baa76a1bde29894b6a50629539a10cd67b7ea926e8b2f86866646201f41"
+    "sha512": "acf6f698a43e69d758fcdbcc30495d7997f1593f161574e18235d2361c83a6592306085969629333005a1c9341399b891a02e9af7de37d798a7ef7f2ebc29276"
   }
 ]
