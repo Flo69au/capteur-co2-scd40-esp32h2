@@ -20,6 +20,13 @@ Version **ESP32-H2** (Waveshare ESP32-H2-Zero) du capteur
 | SCL | GPIO22 |
 | Bouton d'appairage | GPIO1 → GND |
 
+**Alimentation : laisser le SCD40 sur 3V3, pas sur la broche 5V.** La puce SCD40 accepte 2,4–5,5 V,
+mais la plupart des modules SCD40 tirent SDA/SCL à leur VDD : alimentés en 5 V, ils envoient du 5 V sur
+GPIO12/22, et les broches de l'ESP32-H2 ne le supportent pas. Le 5V n'est utilisable qu'avec un module
+qui a son propre régulateur 3,3 V et des pull-ups/adaptateurs de niveau en 3,3 V (vérifier au
+multimètre : tension SDA–GND < 3,6 V module alimenté). Le régulateur 3V3 de la carte suffit pour le
+SCD40 (≈15 mA en moyenne, pics ≈200 mA pendant une mesure).
+
 Broches I2C par défaut de l'ESP32-H2 dans Arduino : vérifier la sérigraphie de la carte.
 À éviter : GPIO 2, 3, 8, 9, 25 (démarrage / LED), 26/27 (USB). `i2c_scanner_h2/` permet de vérifier
 que le SCD40 répond en `0x62`.
