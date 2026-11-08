@@ -14,18 +14,19 @@ Version **ESP32-H2** (Waveshare ESP32-H2-Zero) du capteur
 
 | SCD40 | ESP32-H2-Zero |
 |---|---|
-| VDD | 3V3 |
+| VDD | 5V (voir ci-dessous ; 3V3 possible aussi) |
 | GND | GND |
 | SDA | GPIO12 |
 | SCL | GPIO22 |
 | Bouton d'appairage | GPIO1 → GND |
 
-**Alimentation : laisser le SCD40 sur 3V3, pas sur la broche 5V.** La puce SCD40 accepte 2,4–5,5 V,
-mais la plupart des modules SCD40 tirent SDA/SCL à leur VDD : alimentés en 5 V, ils envoient du 5 V sur
-GPIO12/22, et les broches de l'ESP32-H2 ne le supportent pas. Le 5V n'est utilisable qu'avec un module
-qui a son propre régulateur 3,3 V et des pull-ups/adaptateurs de niveau en 3,3 V (vérifier au
-multimètre : tension SDA–GND < 3,6 V module alimenté). Le régulateur 3V3 de la carte suffit pour le
-SCD40 (≈15 mA en moyenne, pics ≈200 mA pendant une mesure).
+**Alimentation en 5V** (broche 5V de la carte = USB) : possible, la puce SCD40 accepte 2,4–5,5 V.
+Condition : SDA et SCL ne doivent jamais dépasser 3,6 V, car les broches de l'ESP32-H2 ne tolèrent pas
+le 5 V. **Avant de brancher SDA/SCL**, alimenter le module seul (5V + GND) et mesurer au multimètre
+SDA–GND et SCL–GND :
+- ≈ 3,3 V → le module a son régulateur et ses pull-ups en 3,3 V : câblage OK ;
+- ≈ 5 V → ne pas brancher SDA/SCL : remettre VDD sur 3V3, ou ajouter un adaptateur de niveau
+  (type BSS138) entre le module et la carte.
 
 Broches I2C par défaut de l'ESP32-H2 dans Arduino : vérifier la sérigraphie de la carte.
 À éviter : GPIO 2, 3, 8, 9, 25 (démarrage / LED), 26/27 (USB). `i2c_scanner_h2/` permet de vérifier
