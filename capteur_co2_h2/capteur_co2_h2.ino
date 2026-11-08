@@ -60,9 +60,9 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01020000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01030000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01020000-ota-file.zigbee
+ *        -> produit 1337-0003-01030000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
@@ -102,7 +102,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01010000  // v1.1 (flash LED à chaque envoi)
+#define OTA_FW_VERSION       0x01020000  // v1.2 (offset température 8.6°C)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
@@ -111,8 +111,9 @@
 // Offset de température (°C) -> corrige aussi l'humidité (voir setup()).
 // Valeur usine par défaut = 4.0°C. À calibrer une fois la carte dans son boîtier
 // (~30 min de stabilisation) : nouvel_offset = T_capteur - T_reference + offset_installé
-// L'ESP32-H2 chauffe moins que l'ESP32-C6 : ne pas reprendre l'offset de la version C6.
-#define TEMP_OFFSET_C 4.0
+// Chaque carte doit être calibrée séparément (boîtier, alimentation et placement changent l'écart).
+// 2026-11-08 : capteur 25.8°C vs référence 21.2°C avec 4.0 -> 25.8 - 21.2 + 4.0 = 8.6
+#define TEMP_OFFSET_C 8.6
 
 // Correction d'humidité (en points de %RH), appliquée par le firmware avant
 // l'envoi Zigbee. À régler seulement si un écart stable persiste une fois la
