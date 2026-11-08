@@ -50,8 +50,9 @@ que le SCD40 répond en `0x62`.
 - Outils → Partition Scheme : `Zigbee ZCZR 4MB with spiffs`
 - Outils → Erase All Flash Before Sketch Upload : `Enabled` au premier flash, `Disabled` ensuite
 
-Calibrage : partir de `TEMP_OFFSET_C 4.0` (l'ESP32-H2 chauffe moins que la C6), laisser la carte
-30 min dans son boîtier puis `nouvel_offset = T_capteur − T_référence + offset_installé`.
+Calibrage : `TEMP_OFFSET_C 8.6` depuis la v1.2 (capteur 25,8 °C contre 21,2 °C de référence avec
+l'offset usine 4.0). Pour réajuster : laisser la carte 30 min dans son boîtier puis
+`nouvel_offset = T_capteur − T_référence + offset_installé`.
 
 ## Zigbee2MQTT
 
