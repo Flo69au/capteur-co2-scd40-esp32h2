@@ -36,6 +36,8 @@ que le SCD40 répond en `0x62`.
 |---|---|
 | Orange clignotant | Appairage en cours (pas encore connecté au réseau) |
 | Éteinte | Connecté, fonctionnement normal |
+| Flash vert (0,15 s) | Données envoyées à Zigbee2MQTT (toutes les 30 s) |
+| Flash rouge (0,15 s) | Échec d'envoi des données |
 | Blanc fixe | Réinitialisation Zigbee demandée (bouton) |
 | Bleu rapide | Mise à jour OTA en cours |
 
