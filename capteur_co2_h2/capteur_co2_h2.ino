@@ -119,7 +119,7 @@
 // l'envoi Zigbee. À régler seulement si un écart stable persiste une fois la
 // température juste : HUM_OFFSET_PCT = RH_reference - RH_affichée + ancien offset
 // 2026-11-08 (v1.2, offset T 8.6) : affiché 61.3% vs référence 51% -> 51 - 61.3 + 0.0 = -10.3
-#define HUM_OFFSET_PCT -10.3
+#define HUM_OFFSET_PCT -6.1
 
 // Envoi forcé des 3 mesures vers Zigbee2MQTT, quoi qu'il arrive (même si la
 // valeur n'a pas changé). Le reporting automatique de la pile Zigbee ne
