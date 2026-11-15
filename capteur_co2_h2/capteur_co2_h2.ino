@@ -40,7 +40,7 @@
  * LED de statut : la LED RGB WS2812 intégrée (RGB_BUILTIN, GPIO8) clignote
  *   en orange tant que le device n'est pas connecté au réseau Zigbee (donc
  *   pendant l'appairage) et s'éteint une fois connecté. Flash vert = données
- *   envoyées à Zigbee2MQTT (toutes les 30 s), flash rouge = échec d'envoi,
+ *   envoyées à Zigbee2MQTT (sur variation ou 1 h), flash rouge = échec d'envoi,
  *   blanc fixe = reset en cours, bleu rapide = mise à jour OTA.
  *   Couleurs dans ledColor() plus bas.
  *
@@ -102,7 +102,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01030000  // v1.3 (correction humidité -10.3 %)
+#define OTA_FW_VERSION       0x01040000  // v1.4 (envoi sur variation : 0,1 °C / 0,1 % / 1 ppm, ou 1 h)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
@@ -121,10 +121,36 @@
 // 2026-11-08 (v1.2, offset T 8.6) : affiché 61.3% vs référence 51% -> 51 - 61.3 + 0.0 = -10.3
 #define HUM_OFFSET_PCT -6.1
 
-// Envoi forcé des 3 mesures vers Zigbee2MQTT, quoi qu'il arrive (même si la
-// valeur n'a pas changé). Le reporting automatique de la pile Zigbee ne
-// garantit pas un envoi régulier, donc le firmware l'impose lui-même.
-#define REPORT_INTERVAL_MS 30000UL
+// Envoi vers Zigbee2MQTT : chaque mesure n'est envoyée que si elle a varié d'au
+// moins son seuil depuis son dernier envoi, ou si elle n'a rien envoyé depuis
+// REPORT_HEARTBEAT_MS (envoi de sécurité). Plus d'envoi forcé périodique.
+// C'est le firmware qui décide : le reporting automatique de la pile Zigbee est
+// neutralisé (voir setup()), il ne garantit pas un envoi régulier.
+#define TEMP_REPORT_DELTA_C   0.1f        // °C
+#define HUM_REPORT_DELTA_PCT  0.1f        // %RH
+#define CO2_REPORT_DELTA_PPM  1.0f        // ppm
+#define REPORT_HEARTBEAT_MS   3600000UL   // envoi de sécurité : au moins 1 fois par heure
+
+// Suivi du dernier envoi d'une mesure
+struct ReportState {
+  bool sent = false;        // false = rien envoyé depuis le démarrage
+  float value = 0.0f;       // dernière valeur envoyée
+  unsigned long ms = 0;     // moment du dernier envoi
+
+  // true si la valeur doit partir : 1er envoi, variation >= seuil, ou 1 h sans envoi
+  // (marge de 0,001 : en flottant 20,1 - 20,0 donne 0,0999...)
+  bool due(float v, float delta) const {
+    if (!sent) return true;
+    if (fabsf(v - value) >= delta - 0.001f) return true;
+    return millis() - ms >= REPORT_HEARTBEAT_MS;
+  }
+  void done(float v) {
+    sent = true;
+    value = v;
+    ms = millis();
+  }
+};
+ReportState repTemp, repHum, repCO2;
 
 uint8_t button = BOOT_PIN;
 volatile bool otaRunning = false;
@@ -277,11 +303,13 @@ void setup() {
   Serial.println("Connecté au réseau Zigbee !");
   ledOff();  // appairage terminé -> LED éteinte en fonctionnement normal
 
-  // Cadence de reporting -> DOIT être appelé après Zigbee.begin()
-  // min=0, max=30, delta=0 -> envoi systématique toutes les 30s, peu importe la variation
-  zbTempHum.setReporting(0, 30, 0);
-  zbTempHum.setHumidityReporting(0, 30, 0);
-  zbCO2.setReporting(0, 30, 0);
+  // Reporting automatique de la pile Zigbee neutralisé -> DOIT être appelé après
+  // Zigbee.begin() (réappliqué à chaque démarrage). Le firmware décide des envois
+  // (seuils ou 1 h) : max = 65000 s (~18 h), seuils hors d'atteinte (600 °C, 600 %,
+  // 65000 ppm). Doit rester aligné sur le convertisseur Z2M.
+  zbTempHum.setReporting(0, 65000, 600);
+  zbTempHum.setHumidityReporting(0, 65000, 600);
+  zbCO2.setReporting(0, 65000, 65000);
 
   // 1ère vérification OTA ~1 min après connexion, puis toutes les heures automatiquement
   zbTempHum.requestOTAUpdate();
@@ -289,7 +317,6 @@ void setup() {
 
 void loop() {
   static unsigned long lastRead = 0;
-  static unsigned long lastReport = 0;
 
   // Pendant une mise à jour OTA : LED clignote vite, boutons de reset désactivés
   // (couper l'alimentation ou remettre à zéro le réseau en plein flash OTA = brique)
@@ -361,19 +388,34 @@ void loop() {
         zbTempHum.setTemperature(temperature);
         zbTempHum.setHumidity(humidity);
         zbCO2.setCarbonDioxide((float)co2);
+
+        // N'envoie que les mesures qui ont assez varié (ou 1 h sans envoi).
+        // En cas d'échec, la valeur n'est pas notée comme envoyée : nouvel essai
+        // à la mesure suivante (~5 s).
+        if (Zigbee.connected()) {
+          bool sentT = false, sentH = false, sentC = false, ok = true;
+          if (repTemp.due(temperature, TEMP_REPORT_DELTA_C)) {
+            sentT = true;
+            if (zbTempHum.reportTemperature()) repTemp.done(temperature); else ok = false;
+          }
+          if (repHum.due(humidity, HUM_REPORT_DELTA_PCT)) {
+            sentH = true;
+            if (zbTempHum.reportHumidity()) repHum.done(humidity); else ok = false;
+          }
+          if (repCO2.due((float)co2, CO2_REPORT_DELTA_PPM)) {
+            sentC = true;
+            if (zbCO2.report()) repCO2.done((float)co2); else ok = false;
+          }
+          if (sentT || sentH || sentC) {
+            Serial.printf("Rapport Zigbee%s%s%s : %s\r\n", sentT ? " T" : "", sentH ? " RH" : "",
+                          sentC ? " CO2" : "", ok ? "envoyé" : "ÉCHEC");
+            ledFlash(ok);  // flash vert (ou rouge si échec)
+          }
+        }
       } else {
         errorToString(error, errorMessage, sizeof(errorMessage));
         Serial.printf("Erreur lecture SCD40: %s\r\n", errorMessage);
       }
     }
-  }
-
-  // Envoi forcé toutes les 30 s des dernières valeurs mesurées
-  if (Zigbee.connected() && millis() - lastReport >= REPORT_INTERVAL_MS) {
-    lastReport = millis();
-    bool ok = zbTempHum.report();   // température + humidité
-    ok = zbCO2.report() && ok;      // CO2
-    Serial.println(ok ? "Rapport Zigbee envoyé" : "Échec d'envoi du rapport Zigbee");
-    ledFlash(ok);  // flash vert (ou rouge si échec)
   }
 }

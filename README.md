@@ -4,7 +4,7 @@ Version **ESP32-H2** (Waveshare ESP32-H2-Zero) du capteur
 [capteur-temp-rature-scd40_zigbee](https://github.com/Flo69au/capteur-temp-rature-scd40_zigbee)
 (XIAO ESP32-C6). Firmware Arduino, **routeur Zigbee** (alimentation secteur), pour Zigbee2MQTT.
 
-- Température + humidité (endpoint 10) et CO2 (endpoint 11), envoyés toutes les 30 s
+- Température + humidité (endpoint 10) et CO2 (endpoint 11), envoyés seulement s'ils varient d'au moins **0,1 °C**, **0,1 %** ou **1 ppm** depuis leur dernier envoi, avec un envoi de sécurité au moins **une fois par heure**
 - Calibrage automatique du CO2 (ASC, 400 ppm), offset de température (`TEMP_OFFSET_C`) et
   correction d'humidité (`HUM_OFFSET_PCT`) réglables
 - Bouton d'appairage (GPIO1 → GND) + bouton BOOT (appui long 5 s), LED RGB de statut
@@ -36,7 +36,7 @@ que le SCD40 répond en `0x62`.
 |---|---|
 | Orange clignotant | Appairage en cours (pas encore connecté au réseau) |
 | Éteinte | Connecté, fonctionnement normal |
-| Flash vert (0,15 s) | Données envoyées à Zigbee2MQTT (toutes les 30 s) |
+| Flash vert (0,15 s) | Données envoyées à Zigbee2MQTT (sur variation ou envoi horaire) |
 | Flash rouge (0,15 s) | Échec d'envoi des données |
 | Blanc fixe | Réinitialisation Zigbee demandée (bouton) |
 | Bleu rapide | Mise à jour OTA en cours |

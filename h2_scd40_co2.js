@@ -31,11 +31,13 @@ export default {
     description: 'Capteur maison CO2 / température / humidité (ESP32-H2 + SCD40)',
     ota: true,
     extend: [
-        // mêmes réglages (0,30,0) : rapport inconditionnel toutes les 30s
-        temperature({reporting: {min: 0, max: 30, change: 0}}),
-        humidity({reporting: {min: 0, max: 30, change: 0}}),
-        // min:0, max:30, change:0 -> aligné sur le firmware qui envoie un
-        // rapport inconditionnel toutes les 30s (setReporting(0,30,0) côté sketch)
-        co2({reporting: {min: 0, max: 30, change: 0}}),
+        // C'est le firmware qui décide des envois : variation >= 0,1 °C, 0,1 % ou
+        // 1 ppm, ou au moins une fois par heure. Ici, le reporting automatique de
+        // la pile Zigbee est neutralisé (max ~18 h, seuils hors d'atteinte), aligné
+        // sur setReporting(0, 65000, ...) du sketch. Il sert surtout à créer la
+        // liaison (bind) vers le coordinateur, sans laquelle les envois n'arrivent pas.
+        temperature({reporting: {min: 0, max: 65000, change: 60000}}),   // 600 °C (unité 0,01 °C)
+        humidity({reporting: {min: 0, max: 65000, change: 60000}}),      // 600 % (unité 0,01 %)
+        co2({reporting: {min: 0, max: 65000, change: 0.065}}),           // 65000 ppm (unité 1e-6)
     ],
 };
