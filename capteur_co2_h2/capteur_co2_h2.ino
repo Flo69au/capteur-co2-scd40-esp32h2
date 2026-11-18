@@ -37,15 +37,17 @@
  *   une autre broche libre (GPIO 0, 4, 5, 10, 11...).
  *   Le bouton BOOT de la carte (GPIO9) fonctionne aussi : appui long > 5 s.
  *
- * LED de statut : la LED RGB WS2812 intégrée (RGB_BUILTIN, GPIO8) clignote
- *   en orange tant que le device n'est pas connecté au réseau Zigbee (donc
- *   pendant l'appairage) et s'éteint une fois connecté. Flash vert = données
- *   envoyées à Zigbee2MQTT (sur variation ou 1 h), flash rouge = échec d'envoi,
- *   blanc fixe = reset en cours, bleu rapide = mise à jour OTA.
- *   Couleurs dans ledColor() plus bas.
+ * LED de statut (LED RGB WS2812 intégrée, RGB_BUILTIN = GPIO8) :
+ *   - connecté, fonctionnement normal : éteinte
+ *   - non connecté au réseau Zigbee (appairage, perte du réseau) : rouge clignotant
+ *   - envoi des données à Zigbee2MQTT : flash vert
+ *   - échec d'envoi : flash rouge
+ *   - bouton maintenu : orange, puis violet quand le reset Zigbee est lancé
+ *   - mise à jour OTA en cours : bleu rapide
+ *   Couleurs dans les fonctions led...() plus bas.
  *
  * Côté Zigbee2MQTT : ce firmware n'étant pas un device "connu", il faut lui
- * associer le convertisseur externe du repo (z2m_converter_h2.js).
+ * associer le convertisseur externe du repo (h2_scd40_co2.js).
  *
  * Mise à jour OTA (par le réseau Zigbee, pas de WiFi nécessaire) :
  *   Le device embarque un client OTA Zigbee natif.
@@ -60,15 +62,15 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01060000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01070000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01060000-ota-file.zigbee
+ *        -> produit 1337-0003-01070000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
  *   mise à jour en permanence, même si la version est déjà installée.
  *   Le device vérifie automatiquement les mises à jour ~1 min après connexion
- *   puis toutes les heures. Pendant une mise à jour, la LED clignote vite et
+ *   puis toutes les heures. Pendant une mise à jour, la LED clignote vite en bleu et
  *   les boutons de reset sont désactivés pour éviter de couper l'update.
  */
 
@@ -102,11 +104,11 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01050000  // v1.5 (correction humidité -13.7 %)
+#define OTA_FW_VERSION       0x01060000  // v1.6 (nouvelles couleurs de LED)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
-#define OTA_IMAGE_TYPE       0x0003      // 3 = capteur CO2 ESP32-H2 (1 = version XIAO C6, 2 = sonde radiateur)
+#define OTA_IMAGE_TYPE       0x0003      // 3 = capteur CO2 ESP32-H2 (2 = sonde radiateur, 1 = ancien capteur C6 abandonné)
 
 // Offset de température (°C) -> corrige aussi l'humidité (voir setup()).
 // Valeur usine par défaut = 4.0°C. À calibrer une fois la carte dans son boîtier
@@ -171,14 +173,17 @@ inline void ledColor(uint8_t r, uint8_t g, uint8_t b) {
   rgbLedWrite(STATUS_LED, r, g, b);
   ledState = (r | g | b) != 0;
 }
-inline void ledOn() {  // blanc : confirmation avant un redémarrage
-  ledColor(40, 40, 40);
-}
-inline void ledOff() {
+inline void ledOff() {  // connecté, fonctionnement normal
   ledColor(0, 0, 0);
 }
-inline void ledTogglePairing() {  // orange clignotant : appairage en cours
-  if (ledState) ledOff(); else ledColor(40, 15, 0);
+inline void ledToggleDisconnected() {  // rouge clignotant : pas connecté au réseau
+  if (ledState) ledOff(); else ledColor(40, 0, 0);
+}
+inline void ledButtonHeld() {  // orange : bouton maintenu
+  ledColor(40, 15, 0);
+}
+inline void ledResetting() {  // violet : reset Zigbee lancé, redémarrage
+  ledColor(30, 0, 40);
 }
 
 // Flash bref à chaque envoi de données (non bloquant : éteint dans loop())
@@ -298,7 +303,7 @@ void setup() {
   Serial.print("Connexion au réseau Zigbee (appairage en cours)");
   while (!Zigbee.connected()) {
     Serial.print(".");
-    ledTogglePairing();  // clignote en orange pendant l'appairage
+    ledToggleDisconnected();  // rouge clignotant tant que non connecté
     delay(200);
   }
   Serial.println();
@@ -339,18 +344,21 @@ void loop() {
   }
 
   // Appui long (>5s) sur le bouton BOOT = factory reset Zigbee (re-appairage)
+  // LED orange tant que le bouton est maintenu, violette quand le reset est lancé
   if (digitalRead(button) == LOW) {
     delay(100);
     unsigned long start = millis();
+    if (digitalRead(button) == LOW) ledButtonHeld();
     while (digitalRead(button) == LOW && !otaRunning) {
       delay(50);
       if (millis() - start > 5000) {
         Serial.println("Factory reset Zigbee...");
-        ledOn();  // confirmation visuelle avant le redémarrage
+        ledResetting();
         delay(500);
         Zigbee.factoryReset();
       }
     }
+    ledOff();  // relâché avant 5 s : rien ne se passe
   }
 
   // Bouton dédié à l'appairage : simple appui court -> factory reset Zigbee
@@ -358,7 +366,9 @@ void loop() {
     delay(50);  // anti-rebond
     if (digitalRead(PAIR_BUTTON) == LOW) {
       Serial.println("Bouton d'appairage pressé -> factory reset Zigbee...");
-      ledOn();  // confirmation visuelle avant le redémarrage
+      ledButtonHeld();  // orange : bouton pressé
+      delay(300);
+      ledResetting();   // puis violet : reset lancé
       delay(500);
       Zigbee.factoryReset();
       while (digitalRead(PAIR_BUTTON) == LOW) {
@@ -371,6 +381,17 @@ void loop() {
   if (ledFlashUntil && (long)(millis() - ledFlashUntil) >= 0) {
     ledFlashUntil = 0;
     ledOff();
+  }
+
+  // Réseau Zigbee perdu : rouge clignotant jusqu'au retour de la connexion
+  static unsigned long lastBlink = 0;
+  if (!Zigbee.connected()) {
+    if (millis() - lastBlink >= 200) {
+      lastBlink = millis();
+      ledToggleDisconnected();
+    }
+  } else if (!ledFlashUntil && ledState) {
+    ledOff();  // reconnecté : LED éteinte
   }
 
   // Le SCD40 produit une nouvelle mesure toutes les ~5s en mode périodique
