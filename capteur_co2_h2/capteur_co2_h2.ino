@@ -62,9 +62,9 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01070000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01080000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01070000-ota-file.zigbee
+ *        -> produit 1337-0003-01080000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
@@ -104,7 +104,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01060000  // v1.6 (nouvelles couleurs de LED)
+#define OTA_FW_VERSION       0x01070000  // v1.7 (couleurs de LED corrigées : g et r inversés)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
