@@ -1,8 +1,7 @@
 # Capteur CO2 / température / humidité Zigbee — ESP32-H2 + SCD40
 
-Version **ESP32-H2** (Waveshare ESP32-H2-Zero) du capteur
-[capteur-temp-rature-scd40_zigbee](https://github.com/Flo69au/capteur-temp-rature-scd40_zigbee)
-(XIAO ESP32-C6). Firmware Arduino, **routeur Zigbee** (alimentation secteur), pour Zigbee2MQTT.
+Capteur Zigbee sur **ESP32-H2** (Waveshare ESP32-H2-Zero) + Sensirion SCD40.
+Firmware Arduino, **routeur Zigbee** (alimentation secteur), pour Zigbee2MQTT.
 
 - Température + humidité (endpoint 10) et CO2 (endpoint 11), envoyés seulement s'ils varient d'au moins **0,1 °C**, **0,1 %** ou **1 ppm** depuis leur dernier envoi, avec un envoi de sécurité au moins **une fois par heure**
 - Calibrage automatique du CO2 (ASC, 400 ppm), offset de température (`TEMP_OFFSET_C`) et
@@ -34,11 +33,11 @@ que le SCD40 répond en `0x62`.
 
 | LED RGB (GPIO8) | Signification |
 |---|---|
-| Orange clignotant | Appairage en cours (pas encore connecté au réseau) |
 | Éteinte | Connecté, fonctionnement normal |
+| Rouge clignotant | Non connecté au réseau Zigbee (appairage en cours ou réseau perdu) |
 | Flash vert (0,15 s) | Données envoyées à Zigbee2MQTT (sur variation ou envoi horaire) |
 | Flash rouge (0,15 s) | Échec d'envoi des données |
-| Blanc fixe | Réinitialisation Zigbee demandée (bouton) |
+| Orange puis violet | Bouton maintenu, puis réinitialisation Zigbee lancée |
 | Bleu rapide | Mise à jour OTA en cours |
 
 ## Compilation (Arduino IDE)
@@ -56,8 +55,7 @@ l'offset usine 4.0), `HUM_OFFSET_PCT -13.7` depuis la v1.5 (59,3 % contre 51,7 %
 
 ## Zigbee2MQTT
 
-1. Copier `z2m_converter_h2.js` dans `external_converters/` (à côté de `configuration.yaml`),
-   il peut cohabiter avec le convertisseur de la version C6.
+1. Copier `h2_scd40_co2.js` dans `external_converters/` (à côté de `configuration.yaml`).
 2. L'OTA passe par l'index commun [zigbee-ota](https://github.com/Flo69au/zigbee-ota), qui
    reprend toutes les heures le `ota_index.json` de ce dépôt :
    ```yaml
@@ -72,9 +70,8 @@ l'offset usine 4.0), `HUM_OFFSET_PCT -13.7` depuis la v1.5 (59,3 % contre 51,7 %
 
 ## Publier une mise à jour OTA
 
-Identifiants OTA : fabricant `0x1337`, type d'image **`0x0003`** (`0x0001` = version C6,
-`0x0002` = sonde radiateur), modèle `H2-SCD40-CO2`. Une image H2 ne peut donc jamais être
-proposée à la version C6, ni l'inverse.
+Identifiants OTA : fabricant `0x1337`, type d'image **`0x0003`** (`0x0002` = sonde radiateur ;
+`0x0001` était l'ancien capteur C6, abandonné : ne pas le réutiliser), modèle `H2-SCD40-CO2`.
 
 1. Commit + push des modifications de `capteur_co2_h2/capteur_co2_h2.ino`
 2. Créer un tag **`v<majeur>.<mineur>`** plus grand que le précédent (`v1.1`, `v1.2`…, ou `v1.2.1`),
