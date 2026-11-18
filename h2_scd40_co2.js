@@ -28,7 +28,7 @@ export default {
     zigbeeModel: ['H2-SCD40-CO2'],
     model: 'H2-SCD40-CO2',
     vendor: 'Florian-DIY',
-    description: 'Capteur maison CO2 / température / humidité (ESP32-H2 + SCD40)',
+    description: 'Le Nez : capteur CO2 / température / humidité (ESP32-H2 + SCD40)',
     ota: true,
     extend: [
         // C'est le firmware qui décide des envois : variation >= 0,1 °C, 0,1 % ou
