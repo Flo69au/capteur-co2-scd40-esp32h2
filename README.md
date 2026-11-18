@@ -1,4 +1,4 @@
-# Capteur CO2 / température / humidité Zigbee — ESP32-H2 + SCD40
+# Le Nez — capteur CO2 / température / humidité Zigbee (ESP32-H2 + SCD40)
 
 Capteur Zigbee sur **ESP32-H2** (Waveshare ESP32-H2-Zero) + Sensirion SCD40.
 Firmware Arduino, **routeur Zigbee** (alimentation secteur), pour Zigbee2MQTT.
