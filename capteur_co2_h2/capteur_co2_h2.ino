@@ -170,7 +170,7 @@ volatile unsigned long otaStartMs = 0;
 // LED RGB WS2812 (RGB_BUILTIN) : pilotée en couleur avec rgbLedWrite()
 static bool ledState = false;
 inline void ledColor(uint8_t r, uint8_t g, uint8_t b) {
-  rgbLedWrite(STATUS_LED, r, g, b);
+  rgbLedWrite(STATUS_LED, g, r, b);  // g et r inversés : LED de l'ESP32-H2-Zero
   ledState = (r | g | b) != 0;
 }
 inline void ledOff() {  // connecté, fonctionnement normal
