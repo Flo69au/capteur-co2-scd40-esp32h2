@@ -49,8 +49,8 @@ que le SCD40 répond en `0x62`.
 - Outils → Partition Scheme : `Zigbee ZCZR 4MB with spiffs`
 - Outils → Erase All Flash Before Sketch Upload : `Enabled` au premier flash, `Disabled` ensuite
 
-Calibrage : `TEMP_OFFSET_C 8.6` depuis la v1.2 (capteur 25,8 °C contre 21,2 °C de référence avec
-l'offset usine 4.0), `HUM_OFFSET_PCT -13.7` depuis la v1.5 (59,3 % contre 51,7 % de référence avec −6,1). Pour réajuster : laisser la carte 30 min dans son boîtier puis
+Calibrage (v1.8) : `TEMP_OFFSET_C 8.7` (8.6 depuis la v1.2, puis −0,1 °C affiché le 25/11) et
+`HUM_OFFSET_PCT -4.6` (−13.7 depuis la v1.5, puis +9,1 % le 25/11). Pour réajuster : laisser la carte 30 min dans son boîtier puis
 `nouvel_offset = T_capteur − T_référence + offset_installé`.
 
 ## Zigbee2MQTT
