@@ -62,9 +62,9 @@
  *   Méthode manuelle (sans GitHub) :
  *     1. Sketch -> "Export compiled binary" dans l'Arduino IDE (.bin)
  *     2. python image_builder_tool.py --manuf-id 0x1337 --image-type 0x0003 \
- *          --file-version 0x01080000 --tag 0x0000 capteur_co2_h2.ino.bin
+ *          --file-version 0x01090000 --tag 0x0000 capteur_co2_h2.ino.bin
  *        (outil Espressif : esp-zigbee-sdk/tools/image_builder_tool/)
- *        -> produit 1337-0003-01080000-ota-file.zigbee
+ *        -> produit 1337-0003-01090000-ota-file.zigbee
  *     3. Le déclarer dans un index JSON lu par Zigbee2MQTT (voir le guide).
  *
  *   Ne JAMAIS mettre "force": true dans l'index : Z2M proposerait alors la
@@ -104,7 +104,7 @@
 // l'Arduino IDE : la garder ÉGALE au dernier tag publié, pour que Zigbee2MQTT
 // ne repropose pas une mise à jour déjà installée.
 #ifndef OTA_FW_VERSION
-#define OTA_FW_VERSION       0x01070000  // v1.7 (couleurs de LED corrigées : g et r inversés)
+#define OTA_FW_VERSION       0x01080000  // v1.8 (calibrage : T 8.7 °C, RH -4.6 %)
 #endif
 #define OTA_HW_VERSION       0x0101      // version matérielle (rarement à changer)
 #define OTA_MANUFACTURER_ID  0x1337      // arbitraire, doit matcher l'image .zigbee généré
@@ -115,7 +115,8 @@
 // (~30 min de stabilisation) : nouvel_offset = T_capteur - T_reference + offset_installé
 // Chaque carte doit être calibrée séparément (boîtier, alimentation et placement changent l'écart).
 // 2026-11-08 : capteur 25.8°C vs référence 21.2°C avec 4.0 -> 25.8 - 21.2 + 4.0 = 8.6
-#define TEMP_OFFSET_C 8.6
+// 2026-11-25 (v1.7 installée) : correction demandée -0.1 °C -> 8.6 + 0.1 = 8.7
+#define TEMP_OFFSET_C 8.7
 
 // Correction d'humidité (en points de %RH), appliquée par le firmware avant
 // l'envoi Zigbee. À régler seulement si un écart stable persiste une fois la
@@ -123,7 +124,8 @@
 // 2026-11-08 (v1.2, offset T 8.6) : affiché 61.3% vs référence 51% -> 51 - 61.3 + 0.0 = -10.3
 // 2026-11-10 : réglé à -6.1 par Florian (v1.4)
 // 2026-11-15 (v1.4) : affiché 59.3% vs référence 51.7% -> 51.7 - 59.3 + (-6.1) = -13.7
-#define HUM_OFFSET_PCT -13.7
+// 2026-11-25 (v1.7 installée) : correction demandée +9.1 % -> -13.7 + 9.1 = -4.6
+#define HUM_OFFSET_PCT -4.6
 
 // Envoi vers Zigbee2MQTT : chaque mesure n'est envoyée que si elle a varié d'au
 // moins son seuil depuis son dernier envoi, ou si elle n'a rien envoyé depuis
